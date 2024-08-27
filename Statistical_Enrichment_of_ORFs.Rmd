@@ -1,0 +1,255 @@
+---
+title: "Statistical Enrichment of ORFs"
+author: "Ryan Wong"
+date: '2022-06-09'
+output: html_document
+---
+
+## Load required packages
+
+```{r Packages}
+library(dplyr)
+library(tidyr)
+library(readr)
+library(readxl)
+library(writexl)
+```
+
+## Input data
+
+Input file will be the genesMatrix_PresenceAbsence file from [link] (http://1002genomes.u-strasbg.fr/files/)  
+Modifications were made in the file to curate the data and add S288C.
+The data for the TtL hit strains (9) and the MtL hit strains (15) were separated into it's own sheet.
+The hits have 4 overlapping strains making the total number of hits 20.
+
+```{r Data loading}
+
+setwd('D:/') #change all paths as needed
+
+ORFs <- read_excel('D:/genesMatrix_PresenceAbsence.xlsx') #all strains
+
+Hits <- read_excel('D:/genesMatrix_PresenceAbsence.xlsx', sheet = 2) #all hits
+
+```
+
+## Determine Core ORFs
+
+Summarize all numerical values in each column to get total representation.
+Select only the ORFs that are found in all 1012 strains and define them as Core ORFs.
+
+```{r Core determination}
+
+sumORFs <- ORFs %>% summarise(across(where(is.numeric), sum))
+
+Core <- sumORFs %>% select(where(~ any(. > 1011)))
+
+```
+
+## Determine S288c ORFs
+
+Select only the ORFs that are found in S288c and define them as S288c ORFs.
+
+```{r S288c determination}
+
+S288c <- ORFs[919, ] %>% select(where(~ any(. > 0))) #S288C was added in as REF and when sorted alphabetically by STD_name ends up in row 919. Adjust accordingly.
+
+```
+
+## Reference Library Curation
+
+Remove the hit strains from the library of all other strains to be able to compare if there is enrichment of certain ORFs vs. the rest of the strains.
+
+
+```{r Library curation}
+
+rownames(ORFs) <- ORFs$STD_name
+
+rownames(Hits) <- Hits$STD_name
+
+RefLib <-subset(ORFs, !rownames(ORFs) %in% rownames(Hits))
+
+```
+
+## Remove Core ORFs
+
+Previously determined Core ORFs will remove them from the reference and all hits.
+
+```{r Core subtraction}
+
+RefLib <- RefLib[, !colnames(RefLib) %in% colnames(Core)]
+RefLib <- data.frame(RefLib)
+
+Hits <- Hits[, !colnames(Hits) %in% colnames(Core)]
+Hits <- data.frame(Hits)
+
+```
+
+## Count ORF Occurance
+
+Sum the occurrence of each non-core ORF and non-occurance.
+
+```{r ORF Occurrence}
+
+sumRef <- data.frame(t(RefLib %>% summarise(across(where(is.numeric), sum))))
+colnames(sumRef) <- "Occr"
+sumRef$N_Occr <- 992 - sumRef$Occr
+
+sumH <- data.frame(t(Hits %>% summarise(across(where(is.numeric), sum))))
+colnames(sumH) <- "Occr"
+sumH$N_Occr <- 20 - sumH$Occr
+
+```
+
+##Fisher Test Enrichment
+
+Do fishers test for each row of summary tables and output p.values to a new table.
+
+```{r Determine Fisher P-values for Enrichment}
+
+i = 1
+Fish_H <- data.frame(rownames(sumH))
+while (i < 2776)
+{
+  TH <- rbind(sumH[i, ], sumRef[i, ])
+  Fish_TH <- fisher.test(TH, alternative = "greater")
+  Fish_H[i,2] <- Fish_TH$p.value
+  i = i + 1
+}
+colnames(Fish_H) <- c("ORF", "P-Enr")
+
+```
+
+##Fisher Test Depleted
+
+Do fishers test for each row of summary tables and output p.values to a new table.
+
+```{r Determine Fisher P-values for Depletion}
+
+i = 1
+while (i < 2776)
+{
+  TH <- rbind(sumH[i, ], sumRef[i, ])
+  Fish_TH <- fisher.test(TH, alternative = "less")
+  Fish_H[i,3] <- Fish_TH$p.value
+  i = i + 1
+}
+colnames(Fish_H) <- c("ORF","P-Enr", "P-Dpl")
+
+```
+
+## Calculate Fractional Occurrence
+
+Take the number of time an ORF occurs in the dataset and divide by total number of strains in dataset.
+
+```{r Fraction of strains with ORF}
+
+sumRef$Frac <- sumRef$Occr/992
+
+sumH$Frac <- sumH$Occr/20
+
+```
+
+# Put Fractional Occurance into Percent
+
+Multiply fractional occurrence by 100.
+
+```{r Percent of strains with ORF}
+
+sumRef$Pcnt <- sumRef$Frac*100
+
+sumH$Pcnt <- sumH$Frac*100
+
+```
+
+## Calculate if ORF is Enriched or Depleted
+
+Logical argument is it greater or less than in Reference library.
+
+```{r Greater or less than Reference}
+
+sumH$Grtr_Ref <- F
+sumH$Grtr_Ref[sumH$Pcnt > sumRef$Pcnt] <- T
+sumH$Less_Ref <- F
+sumH$Less_Ref[sumH$Pcnt < sumRef$Pcnt] <- T
+
+```
+
+## Merge Occurance with Fisher P-value
+
+```{r P-values}
+
+sumH$P_Enr <- Fish_H[,2]
+sumH$P_Dpl <- Fish_H[,3]
+
+```
+
+## P-value significance
+
+Set cut off of 0.05 or lower.
+
+```{r Significance}
+
+sumH$Sig_Enr <- F
+sumH$Sig_Enr[sumH$P_Enr < 0.05] <- T
+sumH$Sig_Dpl <- F
+sumH$Sig_Dpl[sumH$P_Dpl < 0.05] <- T
+
+```
+
+## Add ORF names to Summary Tables
+
+```{r Add ORF names}
+
+sumH$ORFs <- rownames(sumH)
+sumH <- sumH[, c(11, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)]
+
+```
+
+## Calculate Fold Enrichment
+
+```{r Fold Enrichment}
+
+sumH$Fold_Enr <- sumH$Frac/sumRef$Frac
+
+```
+
+## Calculate Odds Ratio
+
+```{r Odds Ratio}
+
+sumH$Odds_Ratio <- ((sumH$Occr/sumH$N_Occr) / (sumRef$Occr/sumRef$N_Occr))
+
+```
+
+## Two-fold Enrichment
+
+```{r two-fold enrichment}
+
+sumH$twofold <- F
+sumH$twofold[sumH$Fold_Enr > 2] <- T
+
+```
+
+## Generate Tables of Enriched and Depleted ORFS
+
+```{r Enriched and Depleted ORFs}
+
+Hits_Enriched <- sumH %>% filter(Sig_Enr == T)
+Hits_Depleted <- sumH %>% filter(Sig_Dpl == T)
+write_xlsx(Hits_Enriched, 'D:/Hits_Enriched_ORFs.xlsx')
+write_xlsx(Hits_Depleted, 'D:/Hits_Depleted_ORFs.xlsx')
+
+```
+
+## Generate Tables of Enriched and Depleted ORFS removing those in S288c
+
+```{r S288c ORF Curation}
+
+Hits_Enriched_no_S288c <- Hits_Enriched[!rownames(Hits_Enriched) %in% colnames(S288c), ]
+Hits_Depleted_no_S288c <- Hits_Depleted[!rownames(Hits_Depleted) %in% colnames(S288c), ]
+Hits_Depleted_S288c <- Hits_Depleted[rownames(Hits_Depleted) %in% colnames(S288c), ]
+write_xlsx(Hits_Enriched_non_S288c, 'D:/Hits_Enriched_non-S288c_ORFs.xlsx')
+write_xlsx(Hits_Depleted_non_S288c, 'D:/Hits_Depleted_non-S288c_ORFs.xlsx')
+write_xlsx(Hits_Depleted_S288c, 'D:/Hits_Depleted_S288c_ORFs.xlsx')
+
+```
