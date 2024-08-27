@@ -1,0 +1,159 @@
+---
+title: "2 Laccase Plot with Error Bars"
+author: "Ryan Wong"
+date: "2024-05-27"
+output: html_document
+---
+
+#Load packages
+
+```{r}
+
+library("ggplot2")
+library("scales")
+library("tidyverse")
+library("readxl")
+library("ggrepel")
+
+```
+
+#Graphing Parameters
+
+```{r}
+
+save <- T
+
+r <- 1000
+
+Act <- T
+
+ActOD <- F
+
+```
+
+#Graph Act
+
+```{r}
+
+if (Act == T) {
+  
+  filename.format <- 'Mean activity-Signif.svg'
+  
+  sh <- 3 #sheet to read
+  
+  xTitle <- "Mean Activity MtL (U)"
+  
+  yTitle <- "Mean Activity TtL (U)"
+  
+  #Load Data
+  
+  mTM <- read_excel(
+    'Z:/mayor_lab/USERS/RyanWong/Laccase/Laccase Assay/Thousand Strains/Hit Verification/Top Hits/Mean and SD.xlsx'
+    , sheet = sh)
+  
+  setwd("Z:/mayor_lab/USERS/RyanWong/Laccase/Laccase Assay/Thousand Strains/Hit Verification/Top Hits")
+  
+  #Calculate Mean and SDs
+  
+  tMe <- mean(mTM$TtL)
+  tSD <- sd(mTM$TtL)
+  tLim <- tMe + (1.645*tSD)
+  
+  mMe <- mean(mTM$MtL)
+  mSD <- sd(mTM$MtL)
+  mLim <- mMe + (1.645*mSD)
+  
+  #Z-scoring
+  
+  mTM$tZ <- (mTM$TtL-tMe)/tSD
+  tZCut <- (0.6745*tSD)+tMe
+  
+  mTM$mZ <- (mTM$MtL-mMe)/mSD
+  mZCut <- (0.6745*mSD)+mMe
+  
+  #Outlier Detection by MAD
+  
+  tMed <- median(mTM$TtL)
+  tMad <- mad(mTM$TtL, constant = 1.4826)
+  tCut <- tMed + tMad
+  
+  mMed <- median(mTM$MtL)
+  mMad <- mad(mTM$MtL, constant = 1.4826)
+  mCut <- mMed + mMad
+  
+  #Robust Z-scoring
+  
+  mTM$tRZ <- (0.6745*mTM$TtL)/tMad
+  tRZCut <- (2.12*tMad)/0.6745
+  
+  mTM$mRZ <- (0.6745*mTM$MtL)/mMad
+  mRZCut <- (1.282*mMad)/0.6745
+  
+  #Annotations for coloring
+  
+  mTM$HighT <- "NO"
+  mTM$HighT[mTM$TtL > tRZCut] <- "T"
+  
+  mTM$HighM <- "NO"
+  mTM$HighM[mTM$MtL > mRZCut] <- "M"
+  
+  mTM$Both <- "NO"
+  mTM$Both[mTM$HighT == "T"] <- "One"
+  mTM$Both[mTM$HighM == "M"] <- "One"
+  mTM$Both[mTM$HighT == "T" & mTM$HighM == "M"] <- "Yes"
+  mTM$Both[mTM$HighT == "NO" & mTM$HighM == "NO"] <- "Low"
+  
+  #Define color vector
+  
+  mycolors <- c("grey", "green", "black", "blue")
+  names(mycolors) <- c("Low", "Yes", "One","Ref")
+  
+  #Annotations for labeling
+  
+  mTM$Lab <- NA
+  mTM$Lab[mTM$Both == "Yes"] <- mTM$Strain[mTM$Both == "Yes"]
+  mTM$Lab[mTM$Strain == "DBVPG4317"] <- mTM$Strain[mTM$Strain == "DBVPG4317"]
+  mTM$Lab[mTM$Strain == "BY4741"] <- mTM$Strain[mTM$Strain == "BY4741"]
+  mTM$Both[mTM$Strain == "BY4741"] <- "Ref"
+  
+  #Plot 2D graph
+  
+  ActPlot <- ggplot(mTM, aes(x = MtL, y = TtL, col = Both, label = Lab)) +
+    geom_point(size = 3) +
+    geom_errorbar(aes(ymin = TtL-ttSD, ymax= TtL+ttSD, col = Both), alpha=0.9, size = 0.5) +
+    geom_errorbar(aes(xmin = MtL-mtSD, xmax= MtL+mtSD, col = Both), alpha=0.9, size = 0.5)+
+    theme_minimal() +
+    theme(legend.position = "none", panel.grid.major.x = element_blank(), 
+          panel.grid.minor.x = element_blank(), panel.grid.major.y = 
+            element_blank(), panel.grid.minor.y = element_blank(), axis.line = 
+            element_line(color="black", size=1, linetype="solid")) +
+    xlab(xTitle) +
+    ylab(yTitle) +
+    expand_limits(x = 0, y = 0) +
+    scale_x_continuous(labels = function(x) format(x, scientific = TRUE)) +
+    scale_y_continuous(labels = function(y) format(y, scientific = TRUE)) +
+    geom_vline(linetype = "dashed"
+               , xintercept = mRZCut, color = "black") +
+    geom_hline(linetype = "dashed"
+               , yintercept = tRZCut, color = "black") +
+    scale_color_manual(values = mycolors) #+
+
+  ActPlot
+  
+```
+  
+#Save the plots with given name
+  
+```{r}
+  
+  if (save == T) {
+    
+    setwd("Z:/mayor_lab/USERS/RyanWong/Laccase/Laccase Assay/Thousand Strains/Hit Verification/Top Hits")
+    
+    ggsave(filename.format, width = 30, height = 20, units = "cm", dpi = r)
+  } else {
+    print('WARNING! FILE NOT SAVED!')
+  }
+} else {print('Activity not plotted!')}
+
+```
