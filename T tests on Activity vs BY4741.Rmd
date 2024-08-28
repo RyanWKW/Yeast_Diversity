@@ -1,0 +1,240 @@
+---
+title: "T-test activities"
+author: "Ryan Wong"
+date: "2023-05-27"
+output: html_document
+---
+
+## Load Packages
+```{r}
+
+library(stats)
+library(readxl)
+library(writexl)
+
+```
+
+## Load data
+```{r}
+
+mT <- read_xlsx("D:/Activities_Mean and SD.xlsx") #data file of the laccase activities where sheet 1 had all ttLcc1 activities and sheet 2 had all mtLcc1 activities. 4 replicates each.
+mT <- mT[1:4,]
+
+mM <- read_xlsx("D:/Activities_Mean and SD.xlsx", sheet = 2)
+mM <- mM[1:4,]
+
+```
+
+## ttLcc1 T-tests
+```{r}
+
+ttPval <- c()
+
+ttPval$`#05` <- t.test(mT$`#05`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`#23` <- t.test(mT$`#23`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`A-14` <- t.test(mT$`A-14`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`AGME_5I` <- t.test(mT$`AGME_5I`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`BY18603` <- t.test(mT$`BY18603`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`BY4743` <- t.test(mT$`BY4743`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`BY5625 (BJ5464)` <- t.test(mT$`BY5625 (BJ5464)`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`C-6` <- t.test(mT$`C-6`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CBS1239` <- t.test(mT$`CBS1239`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CBS6223` <- t.test(mT$`CBS6223`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CBS7958` <- t.test(mT$`CBS7958`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CBS7993` <- t.test(mT$`CBS7993`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CCY_21-4-97` <- t.test(mT$`CCY_21-4-97`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CCY_21-4-98` <- t.test(mT$`CCY_21-4-98`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLI_19` <- t.test(mT$`CLI_19`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLI_21` <- t.test(mT$`CLI_21`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLIB1072` <- t.test(mT$`CLIB1072`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLIB1082` <- t.test(mT$`CLIB1082`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLIB324_2` <- t.test(mT$`CLIB324_2`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLIB549` <- t.test(mT$`CLIB549`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLIB564` <- t.test(mT$`CLIB564`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLIB631` <- t.test(mT$`CLIB631`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLIB649` <- t.test(mT$`CLIB649`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLIB650` <- t.test(mT$`CLIB650`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLIB655` <- t.test(mT$`CLIB655`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLQCA_17-111` <- t.test(mT$`CLQCA_17-111`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`CLQCA_20-060` <- t.test(mT$`CLQCA_20-060`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`D-1` <- t.test(mT$`D-1`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`DBVPG1108` <- t.test(mT$`DBVPG1108`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`DBVPG1122` <- t.test(mT$`DBVPG1122`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`DBVPG1374` <- t.test(mT$`DBVPG1374`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`DBVPG1621-5A` <- t.test(mT$`DBVPG1621-5A`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`DBVPG1714` <- t.test(mT$`DBVPG1714`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`DBVPG4317` <- t.test(mT$`DBVPG4317`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`SM8.3.M5` <- t.test(mT$`SM8.3.M5`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`UCD_09-448` <- t.test(mT$`UCD_09-448`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`UFRJ_50613-2D(a)` <- t.test(mT$`UFRJ_50613-2D(a)`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`UWOPS83-883-2` <- t.test(mT$`UWOPS83-883-2`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`W303αΔpep4` <- t.test(mT$`W303αΔpep4`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`WLP039` <- t.test(mT$`WLP039`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`WLP775` <- t.test(mT$`WLP775`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`Wyeast 3711` <- t.test(mT$`Wyeast 3711`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`Y6_b` <- t.test(mT$`Y6_b`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`YJM984` <- t.test(mT$`YJM984`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`YJM989` <- t.test(mT$`YJM989`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval$`YJM990` <- t.test(mT$`YJM990`, mT$BY4741, alternative = "greater")$p.value
+
+ttPval <- as.data.frame(unlist(ttPval))
+
+ttPval <- round(ttPval, digits = 4)
+
+ttPval$`Strain` <- rownames(ttPval)
+
+write_xlsx(ttPval, path = "D:/ttL-Pvals.xlsx")
+
+```
+
+## mtLcc1 T-tests
+```{r}
+
+mtPval <- c()
+
+mtPval$`#05` <- t.test(mM$`#05`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`#23` <- t.test(mM$`#23`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`A-14` <- t.test(mM$`A-14`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`AGME_5I` <- t.test(mM$`AGME_5I`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`BY18603` <- t.test(mM$`BY18603`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`BY4743` <- t.test(mM$`BY4743`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`BY5625 (BJ5464)` <- t.test(mM$`BY5625 (BJ5464)`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`C-6` <- t.test(mM$`C-6`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CBS1239` <- t.test(mM$`CBS1239`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CBS6223` <- t.test(mM$`CBS6223`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CBS7958` <- t.test(mM$`CBS7958`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CBS7993` <- t.test(mM$`CBS7993`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CCY_21-4-97` <- t.test(mM$`CCY_21-4-97`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CCY_21-4-98` <- t.test(mM$`CCY_21-4-98`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLI_19` <- t.test(mM$`CLI_19`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLI_21` <- t.test(mM$`CLI_21`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLIB1072` <- t.test(mM$`CLIB1072`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLIB1082` <- t.test(mM$`CLIB1082`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLIB324_2` <- t.test(mM$`CLIB324_2`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLIB549` <- t.test(mM$`CLIB549`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLIB564` <- t.test(mM$`CLIB564`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLIB631` <- t.test(mM$`CLIB631`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLIB649` <- t.test(mM$`CLIB649`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLIB650` <- t.test(mM$`CLIB650`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLIB655` <- t.test(mM$`CLIB655`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLQCA_17-111` <- t.test(mM$`CLQCA_17-111`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`CLQCA_20-060` <- t.test(mM$`CLQCA_20-060`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`D-1` <- t.test(mM$`D-1`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`DBVPG1108` <- t.test(mM$`DBVPG1108`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`DBVPG1122` <- t.test(mM$`DBVPG1122`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`DBVPG1374` <- t.test(mM$`DBVPG1374`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`DBVPG1621-5A` <- t.test(mM$`DBVPG1621-5A`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`DBVPG1714` <- t.test(mM$`DBVPG1714`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`DBVPG4317` <- t.test(mM$`DBVPG4317`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`SM8.3.M5` <- t.test(mM$`SM8.3.M5`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`UCD_09-448` <- t.test(mM$`UCD_09-448`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`UFRJ_50613-2D(a)` <- t.test(mM$`UFRJ_50613-2D(a)`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`UWOPS83-883-2` <- t.test(mM$`UWOPS83-883-2`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`W303αΔpep4` <- t.test(mM$`W303αΔpep4`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`WLP039` <- t.test(mM$`WLP039`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`WLP775` <- t.test(mM$`WLP775`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`Wyeast 3711` <- t.test(mM$`Wyeast 3711`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`Y6_b` <- t.test(mM$`Y6_b`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`YJM984` <- t.test(mM$`YJM984`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`YJM989` <- t.test(mM$`YJM989`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval$`YJM990` <- t.test(mM$`YJM990`, mM$BY4741, alternative = "greater")$p.value
+
+mtPval <- as.data.frame(unlist(mtPval))
+
+mtPval <- round(mtPval, digits = 4)
+
+mtPval$`Strain` <- rownames(mtPval)
+
+write_xlsx(mtPval, path = "D:/mtL-Pvals.xlsx")
+
+```
