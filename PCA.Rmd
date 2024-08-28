@@ -1,0 +1,78 @@
+---
+title: "PCA"
+author: "Ryan Wong"
+date: "2024-06-18"
+output: html_document
+---
+
+## Packages
+
+```{r}
+
+library(FactoMineR)
+library(factoextra)
+library(readxl)
+library(writexl)
+library(RColorBrewer)
+library(paletteer)
+library(ggthemes)
+library(dplyr)
+library(tibble)
+library(imputeLCMD)
+
+```
+
+## Data
+
+```{r}
+
+df <- read.delim("D:/Normalized_Curated_Prot_Quant.txt") # Data from Additional file 2 in tab delimited format
+
+df.t <- t(df[,3:ncol(df)])
+
+df.t <- as.data.frame(df.t)
+
+colnames(df.t)[4023] <- "group"
+
+```
+
+## Data Manipulation
+
+```{r}
+
+writedata <- F
+
+tout <- as.data.frame(t(out[,2:ncol(out)]))
+timp <- impute.MinProb(tout, q = 0.05, tune.sigma = 0.05)
+imp <- as.data.frame(t(timp))
+imp$group <- df.t$group
+
+if (writedata == TRUE){
+  
+  write_xlsx(imp, "D:/PCA_Imputed_data.xlsx")
+
+}
+```
+
+## Plot and save images
+
+```{r}
+
+saveimage <- T
+
+my.pca <- PCA(imp[,2:(ncol(imp)-1)], graph = F)
+my.var <- get_pca_var(my.pca)
+
+p <- fviz_pca_ind(my.pca, geom = c("point", "text"), col.ind = imp$group, gradient.cols = paletteer_c("grDevices::rainbow", 21), repel = T)
+p
+
+
+if (saveimage == TRUE){
+  
+  ggsave("PCA_curated_Top20_MinProb_Labeled.svg", device = "svg", path = "D:/", units = "cm", width = 20, height = 15, dpi = 1000)
+  
+  ggsave("PCA_curated_Top20_MinProb_Labeled.jpg", device = "jpg", path = "D:/", units = "cm", width = 20, height = 15, dpi = 1000)
+  
+}
+
+```
