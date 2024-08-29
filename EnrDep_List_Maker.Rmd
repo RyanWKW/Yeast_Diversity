@@ -1,0 +1,170 @@
+---
+title: "Strict Enriched & Depleted List Maker"
+author: "Ryan Wong"
+date: "2024-02-12"
+output: html_document
+---
+
+## Library
+
+```{r}
+
+library(plyr)
+library(tidyverse)
+library(readxl)
+library(writexl)
+
+```
+
+## Defined Paths
+
+```{r}
+
+# List the directory you want the files to go, filenames auto populated
+
+directory <- "D:/"
+
+# Define which strains to pull enriched or depleted proteins/genes from
+# Copy and paste the strains names into S below as needed ("A14", "n05", "CBS6223", "CCY_97", "CCY_98", "CL324_2", "CL549", "CL564", "CL649", "CL650", "CL655", "CLI_21", "D1", "DB1122", "DB1374", "DB1714", "DB4317", "SM8", "UWOPS", "Y6_b")
+
+S <-c("A14", "n05", "CBS6223", "CCY_97", "CCY_98", "CL324_2", "CL549", "CL564", "CL649", "CL650", "CL655", "CLI_21", "D1", "DB1122", "DB1374", "DB1714", "DB4317", "SM8", "UWOPS", "Y6_b")
+
+```
+
+## Compile lists of enriched and depleted proteins/genes
+
+```{r}
+
+n <- 1
+
+for (r in unique(S)) {
+  
+  dat <- read_xlsx(path = paste0("D:/", S[n], "_vs_BY4741_BH005.xlsx")) # File created by "Enriched and Depleted Proteins.Rmd"
+
+  enr <- dat %>% filter(DifEx == "Up") #Subset enriched proteins
+  assign(paste("Enr_", S[n], sep = ""), enr) #Assign unique variable name to the subset
+  
+  dwn <- dat %>% filter(DifEx == "Down") #Subset depleted proteins
+  assign(paste("Dwn_", S[n], sep = ""), dwn) #Assign unique variable name to the subset
+  
+  n = n+1
+  
+}
+
+##Compiling list of enriched proteins. Single column, NOT de-duplicated
+
+Enriched <- c()
+
+n <- 1
+
+for (e in unique(S)) {
+  
+  if (exists(paste0("Enr_", S[n])) == TRUE) {
+  
+  En_temp <- select(get(paste0("Enr_", S[n])), last_col())
+  
+  colnames(En_temp) <- "gene"
+  
+  Enriched <- rbind(Enriched, En_temp)
+  
+  n <- n+1
+  
+  }
+}
+
+write_xlsx(Enriched, path = paste0(directory, "/Cur_BH005_Enriched_List.xlsx"))
+
+##Compiling list of depleted proteins. Single column, NOT de-duplicated
+
+Depleted <- c()
+
+n <- 1
+
+for (d in unique(S)) {
+  
+  if (exists(paste0("Dwn_", S[n])) == TRUE) {
+  
+  Dn_temp <- select(get(paste0("Dwn_", S[n])), last_col())
+  
+  colnames(Dn_temp) <- "gene"
+  
+  Depleted <- rbind(Depleted, Dn_temp)
+  
+  n <- n+1
+  
+  }
+}
+
+write_xlsx(Depleted, path = paste0(directory, "/Cur_BH005_Depleted_List.xlsx"))
+
+```
+
+## Generating de-duplicated Enriched and Depleted Lists
+
+```{r}
+
+ord <- as.data.frame(Depleted[order(Depleted$gene),])
+colnames(ord) <- "gene"
+und <- as.data.frame(ord[!duplicated(ord$gene),])
+colnames(und) <- "Proteins"
+write_xlsx(und, path = paste0(directory, "/Cur_BH005_Dep_Dedup.xlsx"))
+
+oru <- as.data.frame(Enriched[order(Enriched$gene),])
+colnames(oru) <- "gene"
+unu <- as.data.frame(oru[!duplicated(oru$gene),])
+colnames(unu) <- "Proteins"
+write_xlsx(unu, path = paste0(directory, "/Cur_BH005_Enr_Dedup.xlsx"))
+
+```
+
+## Generate Enriched and Depleted protein tables
+
+```{r}
+
+##Compiling table of enriched proteins by strain. Table, NOT de-duplicated, REQUIRES deletion of blank cells manually
+
+Enr_table <- c()
+
+n <- 1
+
+for (f in unique(S)) {
+  
+  if (exists(paste0("Enr_", S[n])) == TRUE) {
+  
+  En_temp <- select(get(paste0("Enr_", S[n])), last_col())
+  
+  colnames(En_temp) <- S[n]
+  
+  Enr_table <- rbind.fill(Enr_table, En_temp)
+  
+  n <- n+1
+  
+  }
+}
+
+write_xlsx(Enr_table, path = paste0(directory, "/Cur_BH005_Enriched_Table.xlsx"))
+ 
+##Compiling table of depleted proteins by strain. Table, NOT de-duplicated, REQUIRES deletion of blank cells manually
+ 
+Dep_table <- c()
+
+n <- 1
+
+for (g in unique(S)) {
+  
+  if (exists(paste0("Dwn_", S[n])) == TRUE) {
+  
+  Dn_temp <- select(get(paste0("Dwn_", S[n])), last_col())
+  
+  colnames(Dn_temp) <- S[n]
+  
+  Dep_table <- rbind.fill(Dep_table, Dn_temp)
+  
+  n <- n+1
+  
+  }
+} 
+
+write_xlsx(Dep_table, path = paste0(directory, "/Cur_BH005_Depleted_Table.xlsx"))
+
+```
