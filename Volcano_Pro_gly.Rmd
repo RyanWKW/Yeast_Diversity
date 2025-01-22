@@ -1,0 +1,179 @@
+---
+title: "Volcano_Pro_gly"
+author: "Ryan Wong"
+date: "2024-11-29"
+output: html_document
+---
+
+## Load Packages
+
+```{r}
+
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+library(ggrepel)
+library(imputeLCMD)
+library(writexl)
+
+```
+
+## Load Data
+
+```{r}
+prot <- read.delim("Z:/mayor_lab/USERS/RyanWong/Yeast MS/96-Samples/Normalized_curated_May_30_2023.txt")
+rownames(prot) <- prot[,1]
+p.imp <- impute.MinProb(prot[1:nrow(prot), 3:ncol(prot)], q = 0.05, tune.sigma = 0.05)
+prot <- cbind(prot[,1:2], p.imp)
+t.prot <- as.data.frame(t(prot[3:ncol(prot)]))
+
+```
+
+## Subset into strains
+
+```{r}
+#Set list of names to title new dataframes
+
+Strains <- c("n05", "A14", "EV", "TtL", "CBS6223", "CCY_97", "CCY_98", "CL324_2", "CL549", "CL564", "CL649", "CL650", "CL655", "CLI_21", "D1", "DB1122", "DB1374", "DB1714", "DB4317", "SM8", "UWOPS", "Y6_b")
+
+#Generate subset dataframes
+
+n <- 1
+while (n < 23) {
+  x <- subset(t.prot, t.prot[,4023] == n)
+  x <- as.data.frame(t(x))
+  assign(Strains[n], x)
+  
+  #Convert to log2
+  x.l <- log2(x[1:(nrow(x)-1),])
+  assign(paste(Strains[n], "_log2", sep = ""), x.l)
+  
+  n <- n + 1
+}
+
+t.prot <- as.data.frame(t(t.prot[,1:(ncol(t.prot)-1)]))
+
+```
+
+## T-tests & log2 Fold-change
+
+```{r}
+
+#Set list to pull datatable names from
+
+S <- c("n05", "A14", "EV", "CBS6223", "CCY_97", "CCY_98", "CL324_2", "CL549", "CL564", "CL649", "CL650", "CL655", "CLI_21", "D1", "DB1122", "DB1374", "DB1714", "DB4317", "SM8", "UWOPS", "Y6_b")
+
+S_log <- c("n05_log2", "A14_log2", "EV_log2", "CBS6223_log2", "CCY_97_log2", "CCY_98_log2", "CL324_2_log2", "CL549_log2", "CL564_log2", "CL649_log2", "CL650_log2", "CL655_log2", "CLI_21_log2", "D1_log2", "DB1122_log2", "DB1374_log2", "DB1714_log2", "DB4317_log2", "SM8_log2", "UWOPS_log2", "Y6_b_log2")
+
+#Proteins with roles in protein glycosylation
+
+glycosylation <- c("YBR110W", "YNL048W", "YNR030W", "YGL065C", "YBL082C_NumOfGenes_2", "YPL227C", "YOR002W", "YBR243C", "YOR067C", "YNL219C", "YGR036C", "YIL049W", "YGR227W", "YPR183W", "YDR414C", "YEL042W", "YDR483W", "YOR336W", "YOR099W", "YKR061W", "YBR205W", "YBR199W", "YNL029C", "YPL053C", "YIL085C", "YHR204W", "YLR057W", "YER001W", "YJL183W", "YJR061W", "YBR015C", "YKL201C_NumOfGenes_2", "YJL186W", "YPL050C", "YJR131W", "YGL257C", "YIL014W", "YNR059W", "YDL193W", "YJL002C", "YOR103C_NumOfGenes_2", "YOR085W", "YDL232W", "YGL226C A", "YML019W", "YER003C", "YDL095W_NumOfGenes_2", "YAL023C", "YOR321W", "YJR143C", "YDL093W", "YGR199W", "YDR307W", "YDL055C", "YBR002C", "YMR013C", "YMR101C", "YGL022W", "YMR149W", "YEL002C", "YER005W", "YJL139C", "YEL036C", "YDR245W", "YJR075W", "YGL027C")
+
+#Run T-tests and calculate log2 fold-change
+
+n <- 1
+
+for (r in unique(S_log)) {
+  
+  pval <- c()
+
+for (i in unique(rownames(t.prot))) {
+
+  pval.fil <- get(S_log[n]) %>%
+
+    filter(rownames(get(S_log[n])) == i)
+
+  ref <- TtL %>%
+    
+    filter(rownames(TtL) == i)
+
+  ref.fil <- TtL_log2 %>%
+    
+    filter(rownames(TtL_log2) == i)
+
+ test <- get(S[n]) %>%
+
+    filter(rownames(get(S[n])) == i)
+
+  test.fil <- get(S_log[n]) %>%
+
+    filter(rownames(get(S_log[n])) == i)
+
+  a <- length(which(!is.na(ref[,2:ncol(ref)])))
+
+  b <- length(which(!is.na(test[,2:ncol(test)])))
+
+ #Change value that a & b must be greater or equal to for more or less minimum IDs
+  if (a >= 2 & b >= 2) {
+
+    t <- t.test(ref[,2:ncol(ref)], test[,2:ncol(test)],var.equal = FALSE, alternative = "two.sided", na.action = FALSE)
+
+  pval.fil$ref.mn[i] <- rowMeans(ref[,2:ncol(ref)], na.rm = TRUE)
+  pval.fil$test.mn[i] <- rowMeans(test[,2:ncol(test)], na.rm = TRUE)
+  pval.fil$pvalue[i] <- t$p.value
+  pval.fil$log2_F_C[i] <- log2((pval.fil$test.mn / pval.fil$ref.mn))
+
+  } else {
+
+    pval.fil$ref.mn[i] <- NA
+    pval.fil$test.mn[i] <- NA
+    pval.fil$pvalue[i] <- NA
+    pval.fil$ref.mn[i] <- NA
+    pval.fil$test.mn[i] <- NA
+    pval.fil$log2_F_C[i] <- NA
+
+  }
+  
+  pval <- rbind(pval, pval.fil)
+  
+}
+
+pval$BH <- p.adjust(pval$pvalue, method="BH")
+  
+pval$DifEx <- "No"
+pval$DifEx[pval$log2_F_C > log2(2) & pval$BH < 0.05] <- "Up" #Change values for different fold change & p-value cutoffs
+pval$DifEx[pval$log2_F_C < log2(0.5) & pval$BH < 0.05] <- "Down" #Change values for different fold change & p-value cutoffs
+pval$IDs <- prot[1:(nrow(prot)-1),2]
+pval$DifEx[pval$IDs %in% glycosylation] <- "Z"
+pval$glycosylation <- NA
+pval$glycosylation[pval$DifEx == "Z"] <- pval$IDs[pval$DifEx == "Z"]
+
+#Volcano Plotting
+
+S_names <- c("#05", "A-14", "EV", "CBS6223", "CCY_97", "CCY_98", "CLIB324_2", "CLIB549", "CLIB564", "CLIB649", "CLIB650", "CLIB655", "CLI_21", "D-1", "DBVPG1122", "DBVPG1374", "DBVPG1714", "DBVPG4317", "SM8_3.M5", "UWOPS", "Y6_b")
+
+plot <- ggplot(pval, aes(x = log2_F_C, y = -log10(BH), col = DifEx, label = glycosylation)) +
+  geom_point() +
+  scale_color_manual(values = c("palegreen3", "grey", "lightskyblue", "black")) +
+  geom_text_repel() +
+  geom_point(data = pval %>% filter(DifEx == "Z"), col = "black") +
+  geom_hline(yintercept = -log10(0.05), linetype = "dashed", col = "red") + #Change for different p-value
+  geom_vline(xintercept = log2(2), linetype = "dashed", col = "red") + #Change values for different fold change cutoffs
+  geom_vline(xintercept = log2(0.5), linetype = "dashed", col = "red") + #Change values for different fold change cutoffs
+  theme_minimal() +
+  theme(legend.position = "none") +
+  ggtitle(paste(S_names[n],"vs. BY4741 - Protein Glycosylation")) +
+  xlab("log2 Fold-Change") +
+  ylab("-log10 p-value")
+
+#save Plots (set FALSE if you don't want to save the plots)
+
+saveimage <- T
+
+if (saveimage == TRUE){
+
+#Change text strings to rename plots and where the plots will save to
+  ggsave(paste(S[n], "_vs_BY4741_TtL_GlyGO_BH.jpg", sep = ""), device = "jpg", path = "Z:/mayor_lab/USERS/RyanWong/Yeast MS/96-Samples/RW142 - Volcano Glycosylation Highlight/Pro_gly_GO_005", units = "cm", width = 20, height = 15, dpi = 300)
+  
+  ggsave(paste(S[n], "_vs_BY4741_TtL_GlyGO_BH.svg", sep = ""), device = "svg", path = "Z:/mayor_lab/USERS/RyanWong/Yeast MS/96-Samples/RW142 - Volcano Glycosylation Highlight/Pro_gly_GO_005", units = "cm", width = 20, height = 15, dpi = 300)
+  
+}
+
+write_xlsx(pval, path = paste("Z:/mayor_lab/USERS/RyanWong/Yeast MS/96-Samples/RW142 - Volcano Glycosylation Highlight/Pro_gly_GO_005/", S[n], "_vs_BY4741_TtL_GlyGO_BH.xlsx", sep = ""))
+
+n <- n+1
+
+}
+
+```
